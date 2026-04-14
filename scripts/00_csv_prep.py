@@ -13,4 +13,4 @@ PSME1_vs_Scram = pd.read_csv(
     "data/raw/PSME1_vs_scram_raw.csv", usecols=[0,4,5,6,7,8,9]
     )
 # Save new csv
-PSME1_vs_Scram.to_csv("PSME1_vs_Scram.csv",index=False)
+PSME1_vs_Scram.to_csv("data/raw/PSME1_vs_Scram.csv",index=False)

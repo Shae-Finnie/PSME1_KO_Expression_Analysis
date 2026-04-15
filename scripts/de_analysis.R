@@ -17,12 +17,12 @@ cat(sprintf("      %d proteins x %d samples\n", nrow(mat), ncol(mat)))
 
 # 2. Define groups and design matrix
 cat("[2/6] Building design matrix...\n")
-group <- factor(c("PSME1_KO", "PSME1_KO", "PSME1_KO", "Scram", "Scram", "Scram"))
+group <- factor(c("PSME1_KD", "PSME1_KD", "PSME1_KD", "Scram", "Scram", "Scram"))
 design <- model.matrix(~ 0 + group)
 colnames(design) <- levels(group)
 
-# Contrast: KO vs Scram (positive logFC = higher in KO)
-contrast_matrix <- makeContrasts(PSME1_KO - Scram, levels = design)
+# Contrast: KD vs Scram (positive logFC = higher in KD)
+contrast_matrix <- makeContrasts(PSME1_KD - Scram, levels = design)
 
 # 3. Fit limma model
 # eBayes borrows variance information across all proteins —
@@ -41,8 +41,8 @@ results <- results %>%
   mutate(
     significant = adj.P.Val < 0.05 & abs(logFC) > 1,
     direction   = case_when(
-      adj.P.Val < 0.05 & logFC >  1 ~ "Up in KO",
-      adj.P.Val < 0.05 & logFC < -1 ~ "Down in KO",
+      adj.P.Val < 0.05 & logFC >  1 ~ "Up in KD",
+      adj.P.Val < 0.05 & logFC < -1 ~ "Down in KD",
       TRUE                           ~ "NS"
     )
   )
@@ -50,9 +50,9 @@ results <- results %>%
 write.csv(results, "results/DEA_results.csv", row.names = FALSE)
 n_sig <- sum(results$significant)
 cat(sprintf("      Significant hits (FDR < 0.05, |logFC| > 1): %d proteins\n", n_sig))
-cat(sprintf("      Up in KO: %d  |  Down in KO: %d\n",
-    sum(results$direction == "Up in KO"),
-    sum(results$direction == "Down in KO")))
+cat(sprintf("      Up in KD: %d  |  Down in KD: %d\n",
+    sum(results$direction == "Up in KD"),
+    sum(results$direction == "Down in KD")))
 
 # 5. Volcano plot
 cat("[5/6] Generating volcano plot...\n")
@@ -68,8 +68,8 @@ psme_labels <- results %>%
 volcano <- ggplot(results, aes(x = logFC, y = -log10(adj.P.Val), color = direction)) +
   geom_point(alpha = 0.6, size = 1.5) +
   scale_color_manual(values = c(
-    "Up in KO"   = "#d62728",
-    "Down in KO" = "#1f77b4",
+    "Up in KD"   = "#d62728",
+    "Down in KD" = "#1f77b4",
     "NS"         = "grey70"
   )) +
   geom_vline(xintercept = c(-1, 1), linetype = "dashed", color = "black", linewidth = 0.4) +
@@ -87,7 +87,7 @@ volcano <- ggplot(results, aes(x = logFC, y = -log10(adj.P.Val), color = directi
     min.segment.length = 0,
     max.overlaps      = Inf
   ) +
-  # PSME1/PSME2 bold and slightly larger to stand out as KO targets
+  # PSME1/PSME2 bold and slightly larger to stand out as KD targets
   ggrepel::geom_text_repel(
     data          = psme_labels,
     aes(label     = ProteinID),
@@ -99,7 +99,7 @@ volcano <- ggplot(results, aes(x = logFC, y = -log10(adj.P.Val), color = directi
     max.overlaps  = Inf
   ) +
   labs(
-    title    = "PSME1 KO vs Scramble",
+    title    = "PSME1 KD vs Scramble",
     subtitle = sprintf("%d significant proteins (FDR < 0.05, |logFC| > 1)", n_sig),
     x        = "log2 Fold Change",
     y        = "-log10 adjusted p-value",
@@ -131,10 +131,10 @@ if (length(sig_proteins) > 1) {
   heatmap_mat_z <- t(scale(t(heatmap_mat)))
 
   annotation_col <- data.frame(
-    Group = c("KO", "KO", "KO", "Scram", "Scram", "Scram"),
+    Group = c("KD", "KD", "KD", "Scram", "Scram", "Scram"),
     row.names = colnames(heatmap_mat_z)
   )
-  ann_colors <- list(Group = c(KO = "#d62728", Scram = "#1f77b4"))
+  ann_colors <- list(Group = c(KD = "#d62728", Scram = "#1f77b4"))
 
   png("results/psme1_kd_heatmap.png", width = 8, height = 12, units = "in", res = 150)
   pheatmap(
@@ -146,7 +146,7 @@ if (length(sig_proteins) > 1) {
     cluster_cols      = TRUE,
     show_rownames     = TRUE,
     fontsize_row      = 7,
-    main              = sprintf("Top %d DEPs: PSME1 KO vs Scram (z-score)", length(sig_proteins))
+    main              = sprintf("Top %d DEPs: PSME1 KD vs Scram (z-score)", length(sig_proteins))
   )
   dev.off()
   cat("      Saved: results/psme1_kd_heatmap.png\n")
